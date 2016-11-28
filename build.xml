@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<project name="taskbase" basedir="." default="compile"
+         xmlns:ivy="antlib:org.apache.ivy.ant">
+    <!-- Variables -->
+    <property name="src.dir" value="src"/>
+    <property name="test.dir" value="test"/>
+    <property name="lib1.dir" value="mavenlib"/>
+    <property name="lib2.dir" value="lib"/>
+    <property name="build.dir" value="out"/>
+
+    <!-- Classpath -->
+    <path id="classpath">
+        <fileset dir="${lib1.dir}" includes="*.jar"/>
+        <fileset dir="${lib2.dir}" includes="*.jar"/>
+    </path>
+
+    <!-- Compile the java source code -->
+    <target name="compilejava">
+        <javac encoding="UTF8" srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" includeantruntime="false" verbose="false" debug="true"/>
+        <javac encoding="UTF8" srcdir="${test.dir}" destdir="${build.dir}" classpathref="classpath" includeantruntime="false" verbose="false"/>
+    </target>
+
+    <target name="compile" depends="resolve, compilejava"></target>
+
+    <!-- package resolving -->
+    <path id="ivy.lib.path">
+        <fileset dir="${lib2.dir}" includes="*.jar"/>
+    </path>
+
+    <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant"
+             classpathref="ivy.lib.path"/>
+
+    <target name="resolve" description="Retrieve dependencies with Apache IVY">
+        <ivy:retrieve type="jar,bundle" pattern="${lib1.dir}/[artifact].[ext]" sync="true"/>
+    </target>
+</project>

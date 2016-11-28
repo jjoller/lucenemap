@@ -1,0 +1,15 @@
+<ivy-module version="2.0">
+    <info organisation="apache" module="hello-ivy"/>
+    <dependencies>
+
+        <dependency org="org.apache.lucene" name="lucene-core" rev="6.3.0"></dependency>
+        <dependency org="org.apache.lucene" name="lucene-analyzers-common" rev="6.3.0"></dependency>
+        <dependency org="org.apache.lucene" name="lucene-queryparser" rev="6.3.0"></dependency>
+        <dependency org="org.apache.lucene" name="lucene-grouping" rev="6.3.0"></dependency>
+        <dependency org="org.apache.lucene" name="lucene-misc" rev="6.3.0"></dependency>
+        <dependency org="org.apache.lucene" name="lucene-queries" rev="6.3.0"></dependency>
+        <dependency org="org.apache.lucene" name="lucene-highlighter" rev="6.3.0"></dependency>
+        <dependency org="org.apache.lucene" name="lucene-suggest" rev="6.3.0"></dependency>
+
+    </dependencies>
+</ivy-module>
