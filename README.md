@@ -1,4 +1,4 @@
-# lucenemap
+# LuceneMap - Easy, scalable, persistent Map
 
 Persistent map that implements the java Map interface. Keys and values have to implement the Serializable interface. 
 Based on the Lucene NRT search.
