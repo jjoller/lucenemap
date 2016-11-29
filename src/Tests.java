@@ -8,13 +8,12 @@ public class Tests {
     public static void main(String[] args) {
 
 
-        LuceneMap<String, String> map = new LuceneMap<>("dir");
+        LuceneMap<String, String> map = new LuceneMap<>();
 
 
         assertTrue(map.size() == 0);
 
         map.put("key", "val");
-
 
         assertTrue(map.size() == 1);
         assertTrue(map.containsKey("key"));
@@ -32,13 +31,22 @@ public class Tests {
         assertTrue(map.entrySet().iterator().next().getKey().equals("key"));
         assertTrue(map.entrySet().iterator().next().getValue().equals("val2"));
 
+
         Random random = new Random();
         long t = System.currentTimeMillis();
-        int n = 10000;
+        int n = 1000;
         for (int i = 0; i < n; i++) {
             map.put(random.nextDouble() + "", random.nextDouble() + "");
         }
         System.out.println("took " + (System.currentTimeMillis() - t) + " ms to write " + n + " entries");
+
+
+        t = System.currentTimeMillis();
+        n = 1000;
+        for (int i = 0; i < n; i++) {
+            map.get(random.nextDouble());
+        }
+        System.out.println("took " + (System.currentTimeMillis() - t) + " ms to lookup " + n + " entries");
 
     }
 

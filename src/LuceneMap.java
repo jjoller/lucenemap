@@ -15,7 +15,6 @@ import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.ControlledRealTimeReopenThread;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
@@ -53,7 +52,15 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
         this("lucenemap");
     }
 
+    public LuceneMap(boolean inMemory) {
+        this(null, inMemory);
+    }
+
     public LuceneMap(String folderUrl) {
+        this(folderUrl, false);
+    }
+
+    public LuceneMap(String folderUrl, boolean inMemory) {
 
         Analyzer analyzer = new StandardAnalyzer();
         IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);
@@ -64,7 +71,7 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
 
         try {
             Directory directory;
-            if (folderUrl != null) {
+            if (!inMemory) {
                 File folder = new File(folderUrl);
                 if (!folder.exists()) {
                     folder.mkdir();
@@ -76,7 +83,7 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
             writer = new IndexWriter(directory, writerConfig);
             numDocs = writer.numDocs();
             searcherManager = new SearcherManager(writer, true, true, null);
-            log.info("Task index loaded, size: " + numDocs + " tasks.");
+            log.info("Map loaded, size: " + numDocs);
 
         } catch (CorruptIndexException e) {
             log.warning("The " + folderUrl + " index was corrupt, destroy and rebuild!");
@@ -120,12 +127,12 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
         return Base64.getEncoder().encodeToString(baos.toByteArray());
     }
 
-    public Optional<V> lookup(Object key) {
+    public Optional<V> lookup(Object key, boolean refresh) {
 
         K k = (K) key;
         try {
             Optional<V> result = Optional.empty();
-            Optional<Document> doc = document(this.toString(k));
+            Optional<Document> doc = document(this.toString(k), refresh);
             if (doc.isPresent()) {
                 result = Optional.of((V) fromString(doc.get().get(VALUE_FIELD)));
             }
@@ -135,38 +142,23 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
         }
     }
 
-    private Optional<Document> document(String id) {
+    private Optional<Document> document(String id, boolean refresh) {
 
         Builder builder = new BooleanQuery.Builder();
         builder.add(new TermQuery(new Term(KEY_FIELD, id)), Occur.MUST);
-        return loadDoc(builder.build());
+        return loadDoc(builder.build(), refresh);
     }
 
-    private Optional<Document> loadDoc(Query q) {
+    private Optional<Document> loadDoc(Query q, boolean refresh) {
 
         Optional<Document> d = Optional.empty();
         try {
+            if (refresh)
+                this.searcherManager.maybeRefresh();
             IndexSearcher searcher = this.searcherManager.acquire();
             try {
-                TopDocs docs = searcher.search(q, 10);
-
-                if (docs.scoreDocs.length > 1) {
-                    int highestIndex = -1;
-                    int highestDoc = -1;
-                    for (int i = 0; i < docs.scoreDocs.length; i++) {
-                        ScoreDoc sd = docs.scoreDocs[i];
-                        if (sd.doc > highestDoc) {
-                            highestIndex = i;
-                            highestDoc = sd.doc;
-                        }
-                    }
-
-                    Document document = searcher.doc(docs.scoreDocs[highestIndex].doc);
-                    if (document != null) {
-                        d = Optional.of(document);
-                    }
-
-                } else if (docs.scoreDocs.length > 0) {
+                TopDocs docs = searcher.search(q, 1);
+                if (docs.scoreDocs.length > 0) {
                     Document document = searcher.doc(docs.scoreDocs[0].doc);
                     if (document != null) {
                         d = Optional.of(document);
@@ -192,7 +184,6 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
             doc.add(keyField);
             doc.add(valueField);
             writer.updateDocument(new Term(KEY_FIELD, keyString), doc);
-            searcherManager.maybeRefresh();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -204,6 +195,7 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
 
         int indexSize;
         try {
+            this.searcherManager.maybeRefresh();
             IndexSearcher searcher = this.searcherManager.acquire();
             try {
                 indexSize = searcher.getIndexReader().numDocs();
@@ -224,7 +216,7 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
     @Override
     public boolean containsKey(Object o) {
 
-        return lookup(o).isPresent();
+        return lookup(o, true).isPresent();
     }
 
     @Override
@@ -234,7 +226,7 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
             Builder builder = new BooleanQuery.Builder();
             V v = (V) o;
             builder.add(new TermQuery(new Term(VALUE_FIELD, this.toString(v))), Occur.MUST);
-            return loadDoc(builder.build()).isPresent();
+            return loadDoc(builder.build(), true).isPresent();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -243,7 +235,7 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
     @Override
     public Object get(Object o) {
 
-        Optional<V> val = this.lookup(o);
+        Optional<V> val = this.lookup(o, true);
         if (val.isPresent()) {
             return val.get();
         } else {
@@ -253,11 +245,11 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
 
     @Override
     public Object put(Object o, Object o2) {
-        Object old = this.get(o);
+        Optional<V> val = this.lookup(o, false);
         K k = (K) o;
         V v = (V) o2;
         this.save(k, v);
-        return old;
+        return val.isPresent() ? val.get() : null;
     }
 
     @Override
@@ -267,7 +259,6 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
         try {
             K k = (K) o;
             writer.deleteDocuments(new Term(KEY_FIELD, this.toString(k)));
-            searcherManager.maybeRefresh();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -284,7 +275,6 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
 
         try {
             this.writer.deleteAll();
-            this.searcherManager.maybeRefresh();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -305,6 +295,7 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
 
         Set<Entry<K, V>> entries = new HashSet<>();
         try {
+            this.searcherManager.maybeRefresh();
             IndexSearcher searcher = this.searcherManager.acquire();
             try {
                 IndexReader reader = searcher.getIndexReader();
