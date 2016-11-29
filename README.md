@@ -16,3 +16,7 @@ To specify the folder where the map data is stored:
 ```
 Map<String, String> map = new LuceneMap<>("my/dir");
 ```
+
+## Limitations
+* keys and values cannot exceed 32 KB.
+* put() might return an outdated value (performance tradeoff).
