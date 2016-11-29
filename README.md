@@ -1,7 +1,7 @@
 # lucenemap
 
-Persistent map that implements the java Map interface. Stored objects have to implement the Serializable interface. 
-Uses a Lucene under the hood.
+Persistent map that implements the java Map interface. Keys and values have to implement the Serializable interface. 
+Based on the Lucene NRT search.
 
 ```
 Map<String, String> map = new LuceneMap<>();
