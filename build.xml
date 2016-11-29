@@ -3,7 +3,6 @@
          xmlns:ivy="antlib:org.apache.ivy.ant">
     <!-- Variables -->
     <property name="src.dir" value="src"/>
-    <property name="test.dir" value="test"/>
     <property name="lib1.dir" value="mavenlib"/>
     <property name="lib2.dir" value="lib"/>
     <property name="build.dir" value="out"/>
@@ -17,7 +16,6 @@
     <!-- Compile the java source code -->
     <target name="compilejava">
         <javac encoding="UTF8" srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" includeantruntime="false" verbose="false" debug="true"/>
-        <javac encoding="UTF8" srcdir="${test.dir}" destdir="${build.dir}" classpathref="classpath" includeantruntime="false" verbose="false"/>
     </target>
 
     <target name="compile" depends="resolve, compilejava"></target>
