@@ -85,8 +85,6 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
             searcherManager = new SearcherManager(writer, true, true, null);
             log.info("Map loaded, size: " + numDocs);
 
-        } catch (CorruptIndexException e) {
-            log.warning("The " + folderUrl + " index was corrupt, destroy and rebuild!");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
