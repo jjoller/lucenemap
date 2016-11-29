@@ -3,7 +3,6 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -45,11 +44,12 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
 
     private static final Logger log = Logger.getLogger(LuceneMap.class.getName());
 
+    private static final String DEFAULT_DIRECTORY = "lucenemap";
     private static final String VALUE_FIELD = "value";
     private static final String KEY_FIELD = "key";
 
     public LuceneMap() {
-        this("lucenemap");
+        this(DEFAULT_DIRECTORY);
     }
 
     public LuceneMap(boolean inMemory) {
