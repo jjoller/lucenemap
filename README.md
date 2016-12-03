@@ -9,7 +9,7 @@ Map<String, String> map = new LuceneMap<>();
 
 To get an in-memory map that is not persistent:
 ```
-Map<String, String> inMemory = new LuceneMap<>(true);
+Map<String, String> map = new LuceneMap<>(StorageLocation.RAM);
 ```
 
 To specify the folder where the map data is stored:
