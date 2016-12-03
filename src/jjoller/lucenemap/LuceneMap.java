@@ -1,3 +1,5 @@
+package jjoller.lucenemap;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -52,33 +54,40 @@ public class LuceneMap<K extends Serializable, V extends Serializable> implement
         this(DEFAULT_DIRECTORY);
     }
 
-    public LuceneMap(boolean inMemory) {
-        this(null, inMemory);
+    public enum StorageLocation {
+        RAM, FILESYSTEM;
+    }
+
+    public LuceneMap(StorageLocation storageLocation) {
+        this(DEFAULT_DIRECTORY, storageLocation);
     }
 
     public LuceneMap(String folderUrl) {
-        this(folderUrl, false);
+        this(folderUrl, StorageLocation.FILESYSTEM);
     }
 
-    public LuceneMap(String folderUrl, boolean inMemory) {
+    private LuceneMap(String folderUrl, StorageLocation storageLocation) {
+        if (storageLocation == null)
+            throw new IllegalArgumentException("StorageLocation is null");
+
 
         Analyzer analyzer = new StandardAnalyzer();
         IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);
         writerConfig.setCommitOnClose(true);
         writerConfig.setOpenMode(OpenMode.CREATE_OR_APPEND);
-
         int numDocs;
 
         try {
             Directory directory;
-            if (!inMemory) {
+            if (storageLocation == StorageLocation.RAM) {
+                directory = new RAMDirectory();
+            } else {
+                folderUrl = folderUrl == null ? DEFAULT_DIRECTORY : folderUrl;
                 File folder = new File(folderUrl);
                 if (!folder.exists()) {
                     folder.mkdir();
                 }
                 directory = new SimpleFSDirectory(folder.toPath());
-            } else {
-                directory = new RAMDirectory();
             }
             writer = new IndexWriter(directory, writerConfig);
             numDocs = writer.numDocs();

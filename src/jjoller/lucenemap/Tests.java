@@ -1,3 +1,8 @@
+package jjoller.lucenemap;
+
+import jjoller.lucenemap.LuceneMap.StorageLocation;
+
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -7,8 +12,9 @@ public class Tests {
 
     public static void main(String[] args) {
 
+        Map<String, String> map = new LuceneMap<>(StorageLocation.RAM);
 
-        LuceneMap<String, String> map = new LuceneMap<>();
+        //jjoller.lucenemap.LuceneMap<String, String> map = new jjoller.lucenemap.LuceneMap<>();
 
 
         assertTrue(map.size() == 0);
